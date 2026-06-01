@@ -66,6 +66,14 @@ function autoExternalPlugin(collected: Set<string>): esbuild.Plugin {
 // ── Stub helpers ──────────────────────────────────────────────────────────────
 
 function stubContent(filePath: string): string {
+  // For the app entry point, inject a real React mount instead of a null stub.
+  // This ensures the preview renders something even when the model writes a
+  // broken main.jsx — the bundler auto-fixes the entry so we still see the app.
+  if (/main\.[jt]sx?$/.test(filePath)) {
+    // Use a known-good entry point so the preview renders the app
+    // even when the model wrote a broken main.jsx.
+    return "import { createRoot } from 'react-dom/client';\nimport App from './App';\nimport './index.css';\ncreateRoot(document.getElementById('root')).render(<App />);\n";
+  }
   const name =
     (filePath.split("/").pop() ?? "Component")
       .replace(/\.[jt]sx?$/, "")

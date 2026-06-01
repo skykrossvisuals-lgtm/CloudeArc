@@ -4,7 +4,7 @@ import { buildSystemPrompt, type PersonalityIntent, type PersonalityContext, typ
 const router = Router();
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const FAST_MODEL = process.env.MODEL_FAST ?? "qwen/qwen3-8b";
+const FAST_MODEL = process.env.MODEL_FAST ?? "openai/gpt-oss-120b";
 const TIMEOUT_MS = 55_000;
 
 type CollaborateIntent =

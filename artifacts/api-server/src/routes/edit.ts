@@ -4,7 +4,23 @@ import {
   projectDir,
   writeFileToDisk,
   runAgentLoop,
+  sseSend as chatSseSend,
 } from "./chat";
+import { db, buildHistoryTable } from "@workspace/db";
+
+async function saveEditBuild(projectId: string, userPrompt: string, filesWritten: string[]) {
+  try {
+    await db.insert(buildHistoryTable).values({
+      projectId,
+      userPrompt,
+      filesWritten,
+      fileCount: filesWritten.length,
+      isEdit: 1,
+    });
+  } catch (err) {
+    console.warn("[build-history] failed to save edit:", err);
+  }
+}
 
 const router = Router();
 
@@ -95,6 +111,11 @@ router.post("/", async (req, res) => {
       accumulated,
       true,
     );
+
+    if (filesWritten > 0) {
+      const writtenPaths = Object.keys(accumulated).filter((p) => !(files ?? {})[p] || accumulated[p] !== (files ?? {})[p]);
+      await saveEditBuild(projectId, prompt, writtenPaths.length ? writtenPaths : Object.keys(accumulated));
+    }
 
     sseSend(res, "done", { templateType: "edit", fileCount: filesWritten });
     res.end();

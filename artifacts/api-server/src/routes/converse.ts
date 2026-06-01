@@ -4,7 +4,7 @@ import { buildConverseSystemPrompt, type RelationshipPhase } from "../lib/person
 const router = Router();
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const MODEL = process.env.MODEL_GENERAL ?? "qwen/qwen3-coder-next";
+const MODEL = process.env.MODEL_GENERAL ?? "openai/gpt-oss-120b";
 
 function sseSetup(res: Response) {
   res.setHeader("Content-Type", "text/event-stream");

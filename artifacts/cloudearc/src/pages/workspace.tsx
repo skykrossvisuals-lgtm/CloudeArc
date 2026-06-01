@@ -1,5 +1,5 @@
 import Editor, { DiffEditor } from "@monaco-editor/react";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useLocation } from "wouter";
 import { AgentLivenessIndicator, type ExecutionStage } from "../components/AgentLivenessIndicator";
 import { ThoughtBlock, type ThoughtBlockData } from "../components/ThoughtBlock";
@@ -825,91 +825,80 @@ function PhaseGroup({ label, steps, defaultOpen }: {
   );
 }
 
-// ─── task status — Replit-style "N actions" collapsible ───────────────────────
+// ─── task status — Replit-style file-per-step view ────────────────────────────
 
-function BuildStatusLine({ task }: { task: TaskCard }) {
+function fileSizeStr(content: string): string {
+  const bytes = new TextEncoder().encode(content).length;
+  if (bytes < 1024) return `${bytes}b`;
+  return `${(bytes / 1024).toFixed(1)}kb`;
+}
+
+function fileTypeLabel(path: string): string {
+  if (path.endsWith(".jsx") || path.endsWith(".tsx")) return "JSX";
+  if (path.endsWith(".ts"))  return "TS";
+  if (path.endsWith(".js"))  return "JS";
+  if (path.endsWith(".css")) return "CSS";
+  if (path.endsWith(".html")) return "HTML";
+  if (path.endsWith(".json")) return "JSON";
+  return "FILE";
+}
+
+function BuildStatusLine({ task, files }: { task: TaskCard; files: Record<string, string> }) {
   const isActive = task.state === "thinking" || task.state === "running";
   const isDone   = task.state === "done";
   const isError  = task.state === "error";
   const phase    = PHASE_META[task.executionStage] ?? PHASE_META.thinking;
-  const [expanded, setExpanded] = useState(false);
 
-  const visibleSteps = isDone
-    ? task.steps.filter((s) => !s.internal && (s.state === "done" || s.state === "error"))
-    : task.steps.filter((s) => !s.internal && (s.path || s.kind === "plan" || s.kind === "write" || s.state === "running"));
-
+  const writeSteps = task.steps.filter((s) => !s.internal && s.path);
+  const doneWrites = writeSteps.filter((s) => s.state === "done");
   const runningNow = task.steps.find((s) => s.state === "running");
-  const doneCount  = task.steps.filter((s) => s.state === "done" && s.path).length;
-  const progressPct = doneCount === 0 ? 0 : Math.min(94, doneCount * 7);
 
-  const hasPhases = !!(task.phases && task.phases.length > 1);
-
-  // ── Done ─────────────────────────────────────────────────────────────────
+  // ── Done — PROJECT FILES card ────────────────────────────────────────────
   if (isDone) {
     return (
-      <div className="py-0.5">
-        <div className="flex items-center gap-1.5 py-0.5">
+      <div className="py-0.5 space-y-2">
+        {/* Summary line */}
+        <div className="flex items-center gap-1.5">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
             <polyline points="20 6 9 17 4 12"/>
           </svg>
-          <span className="text-[12.5px] text-zinc-300 flex-1 leading-snug">{task.summary || task.label}</span>
+          <span className="text-[12.5px] text-zinc-300 leading-snug">{task.summary || task.label}</span>
         </div>
 
-        {visibleSteps.length > 0 && (
-          <div className="mt-1">
-            {hasPhases ? (
-              // ── Multi-phase: Step 1 of N / Step 2 of N collapsible groups ──
-              <div className="space-y-1.5">
-                {task.phases!.map((ph, phIdx) => {
-                  const phSteps = visibleSteps.filter(s => s.phaseId === ph.id);
-                  if (phSteps.length === 0) return null;
-                  return (
-                    <PhaseGroup
-                      key={ph.id}
-                      label={`Step ${phIdx + 1} of ${task.phases!.length}: ${ph.label}`}
-                      steps={phSteps}
-                    />
-                  );
-                })}
-                {/* Unphased steps (bundling, auto-fix, etc.) */}
-                {(() => {
-                  const unphasedSteps = visibleSteps.filter(s => !s.phaseId);
-                  if (unphasedSteps.length === 0) return null;
-                  return <PhaseGroup label="Finalizing" steps={unphasedSteps} />;
-                })()}
-              </div>
-            ) : (
-              // ── Single group (original flat toggle) ──
-              <>
-                <button
-                  onClick={() => setExpanded((v) => !v)}
-                  className="flex items-center gap-1.5 text-[11px] text-zinc-500 hover:text-zinc-300 transition-colors select-none group"
-                >
-                  <svg
-                    width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                    className={`transition-transform duration-150 ${expanded ? "rotate-90" : ""}`}
-                  >
-                    <polyline points="9 18 15 12 9 6"/>
-                  </svg>
-                  <span>{expanded ? "Show less" : `${visibleSteps.length} action${visibleSteps.length !== 1 ? "s" : ""}`}</span>
-                </button>
-                {expanded && (
-                  <div className="mt-1.5 space-y-[3px]">
-                    {visibleSteps.map((s) => {
-                      const dur = stepDuration(s);
-                      return (
-                        <div key={s.id} className="flex items-center gap-2 py-[2px]">
-                          <StepIcon step={s} />
-                          <span className="text-[11px] text-zinc-500 truncate flex-1">{stepLabel(s)}</span>
-                          {dur && <span className="shrink-0 text-[10px] text-zinc-700">({dur})</span>}
-                        </div>
-                      );
-                    })}
+        {/* PROJECT FILES card */}
+        {doneWrites.length > 0 && (
+          <div
+            className="rounded-lg overflow-hidden"
+            style={{ border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.025)" }}
+          >
+            <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+              <span className="text-[10px] font-semibold tracking-widest text-zinc-500 uppercase">Project Files</span>
+              <span className="text-[10px] text-zinc-600 tabular-nums">{doneWrites.length} file{doneWrites.length !== 1 ? "s" : ""}</span>
+            </div>
+            <div className="py-1">
+              {doneWrites.map((s) => {
+                const color = s.path ? fileTypeColor(s.path) : "#94a3b8";
+                const label = s.path ? fileTypeLabel(s.path) : "FILE";
+                const content = s.path ? files[s.path] : undefined;
+                const size = content ? fileSizeStr(content) : "";
+                return (
+                  <div key={s.id} className="flex items-center gap-2.5 px-3 py-[5px] hover:bg-white/[0.025] transition-colors">
+                    <span
+                      className="shrink-0 text-[8.5px] font-bold font-mono px-[4px] py-[1px] rounded"
+                      style={{ color, background: `${color}18` }}
+                    >
+                      {label}
+                    </span>
+                    <span className="flex-1 text-[11px] text-zinc-400 font-mono truncate min-w-0">
+                      {s.path ? shortPath(s.path) : s.text}
+                    </span>
+                    {size && (
+                      <span className="shrink-0 text-[10px] text-zinc-600 tabular-nums">{size}</span>
+                    )}
                   </div>
-                )}
-              </>
-            )}
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
@@ -928,103 +917,73 @@ function BuildStatusLine({ task }: { task: TaskCard }) {
     );
   }
 
-  // ── Active: live expanding action list ───────────────────────────────────
+  // ── Active — live file-by-file feed ──────────────────────────────────────
   return (
-    <div className="py-0.5">
-      {/* Live phase/stage header */}
-      <div className="flex items-center gap-1.5 mb-1.5">
+    <div className="py-0.5 space-y-1.5">
+      {/* Header: current operation with liveness dot */}
+      <div className="flex items-center gap-2">
         <AgentLivenessIndicator active={true} size={12} stage={task.executionStage} />
-        {hasPhases ? (
-          <span className="text-[11px] text-zinc-500 select-none">
-            {(() => {
-              const phIdx = task.phases!.findIndex(p => p.id === task.currentPhaseId);
-              const ph = task.phases![phIdx >= 0 ? phIdx : 0];
-              return `Step ${phIdx + 1} of ${task.phases!.length}: ${ph.label}`;
-            })()}
-            {doneCount > 0 && <span className="text-zinc-700"> · {doneCount} file{doneCount !== 1 ? "s" : ""}</span>}
-          </span>
-        ) : (
-          <span className="text-[11px] text-zinc-500 select-none">
-            {phase.label.charAt(0) + phase.label.slice(1).toLowerCase()}
-            {doneCount > 0 && <span className="text-zinc-700"> · {doneCount} file{doneCount !== 1 ? "s" : ""}</span>}
-          </span>
-        )}
+        <span className="text-[11.5px] text-zinc-400 leading-snug">
+          {runningNow?.path
+            ? <>Writing <span className="font-mono" style={{ color: fileTypeColor(runningNow.path) }}>{runningNow.path.split("/").pop()}</span>…</>
+            : runningNow
+              ? runningNow.kind === "plan" ? "Planning…" : runningNow.text
+              : phase.label.charAt(0) + phase.label.slice(1).toLowerCase() + "…"}
+        </span>
       </div>
 
-      {/* Streaming progress bar — grows as files land, purple when building */}
-      {doneCount > 0 && (
-        <div className="mb-2">
-          <div className="h-[2px] bg-zinc-800/60 rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all duration-700 ease-out ca-progress-glow"
-              style={{
-                width: `${progressPct}%`,
-                background: "linear-gradient(90deg, #6d28d9, #8b5cf6, #a78bfa)",
-              }}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Growing action list — every plan/write step shown */}
-      {visibleSteps.length > 0 && (
-        <div className="space-y-[2px]">
-          {visibleSteps.map((s) => {
-            const isRunningStep = s.state === "running";
-            const isPlanStep = s.kind === "plan";
-            const isWriteStep = s.kind === "write" || !!s.path;
-            const accentColor = isWriteStep
-              ? (s.path ? fileTypeColor(s.path) : "#a78bfa")
-              : isPlanStep ? "#818cf8" : "#71717a";
-
-            if (isRunningStep) {
-              return (
-                <div
-                  key={s.id}
-                  className="flex items-center gap-2 py-[3px] px-2 rounded-md"
-                  style={{
-                    background: "linear-gradient(90deg, rgba(139,92,246,0.10), rgba(139,92,246,0.04))",
-                    border: "1px solid rgba(139,92,246,0.18)",
-                  }}
-                >
-                  {/* Purple spinning ring — Replit-style active indicator */}
-                  <span className="shrink-0 w-3.5 h-3.5 flex items-center justify-center">
-                    <svg
-                      width="13" height="13" viewBox="0 0 13 13"
-                      className="ca-spin-ring"
-                      style={{ display: "block" }}
-                    >
-                      <circle cx="6.5" cy="6.5" r="5" fill="none" stroke="rgba(139,92,246,0.25)" strokeWidth="1.6" />
-                      <path d="M6.5 1.5 A5 5 0 0 1 11.5 6.5" fill="none" stroke="#8b5cf6" strokeWidth="1.6" strokeLinecap="round" />
-                    </svg>
-                  </span>
-                  <span className="text-[11px] font-medium flex-1 min-w-0 truncate" style={{ color: "#c4b5fd" }}>
-                    {isPlanStep ? "Planning…" : s.text}
-                    {s.path && (
-                      <span className="ml-1.5 font-mono text-[10px] opacity-70" style={{ color: accentColor }}>
-                        {s.path.split("/").pop()}
-                      </span>
-                    )}
-                  </span>
-                  <span className="shrink-0 text-[10px]" style={{ color: "#7c3aed" }}>
-                    {isPlanStep ? "thinking" : "writing"}
-                  </span>
-                </div>
-              );
-            }
-
+      {/* Files written so far — grow as they land */}
+      {doneWrites.length > 0 && (
+        <div
+          className="rounded-lg overflow-hidden"
+          style={{ border: "1px solid rgba(255,255,255,0.05)", background: "rgba(255,255,255,0.018)" }}
+        >
+          {doneWrites.slice(-12).map((s) => {
+            const color = s.path ? fileTypeColor(s.path) : "#94a3b8";
+            const label = s.path ? fileTypeLabel(s.path) : "FILE";
+            const content = s.path ? files[s.path] : undefined;
+            const size = content ? fileSizeStr(content) : "";
             return (
-              <div
-                key={s.id}
-                className="flex items-center gap-2 py-[2px] opacity-50"
-              >
-                <StepIcon step={s} />
-                <span className="text-[11px] text-zinc-500 truncate flex-1">
-                  {stepLabel(s)}
+              <div key={s.id} className="flex items-center gap-2.5 px-3 py-[5px]" style={{ borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
+                <span
+                  className="shrink-0 text-[8.5px] font-bold font-mono px-[4px] py-[1px] rounded"
+                  style={{ color, background: `${color}18` }}
+                >
+                  {label}
                 </span>
+                <span className="flex-1 text-[11px] text-zinc-500 font-mono truncate min-w-0">
+                  {s.path ? shortPath(s.path) : s.text}
+                </span>
+                {size && (
+                  <span className="shrink-0 text-[10px] text-zinc-600 tabular-nums">{size}</span>
+                )}
               </div>
             );
           })}
+          {/* Currently writing row */}
+          {runningNow?.path && (
+            <div
+              className="flex items-center gap-2.5 px-3 py-[5px]"
+              style={{ background: "rgba(139,92,246,0.06)", borderTop: doneWrites.length > 0 ? "1px solid rgba(139,92,246,0.12)" : undefined }}
+            >
+              <span className="shrink-0 w-3.5 h-3.5 flex items-center justify-center">
+                <svg width="11" height="11" viewBox="0 0 11 11" className="ca-spin-ring" style={{ display: "block" }}>
+                  <circle cx="5.5" cy="5.5" r="4" fill="none" stroke="rgba(139,92,246,0.25)" strokeWidth="1.4" />
+                  <path d="M5.5 1.5 A4 4 0 0 1 9.5 5.5" fill="none" stroke="#8b5cf6" strokeWidth="1.4" strokeLinecap="round" />
+                </svg>
+              </span>
+              <span className="flex-1 text-[11px] font-mono truncate min-w-0" style={{ color: "#c4b5fd" }}>
+                {shortPath(runningNow.path)}
+              </span>
+              <span className="shrink-0 text-[9px] tracking-wide" style={{ color: "#7c3aed" }}>writing</span>
+            </div>
+          )}
+        </div>
+      )}
+      {/* No files yet — show a single "thinking" indicator */}
+      {doneWrites.length === 0 && !runningNow?.path && (
+        <div className="flex items-center gap-2 py-[2px] pl-1">
+          <ThinkingDots />
         </div>
       )}
     </div>
@@ -2193,7 +2152,7 @@ export default function WorkspacePage({ params }: { params: { id: string } }) {
             }, 2000);
 
             resolveStep(taskId, sid, "done", undefined, { oldContent, newContent: content });
-            orchestrator.fileEdited(path);
+            orchestrator.fileWritten(path, content);
             written++;
             const finalWritten = written;
             updateTask(taskId, (t) => ({ ...t, fileCount: finalWritten }));
@@ -2472,6 +2431,14 @@ export default function WorkspacePage({ params }: { params: { id: string } }) {
   }, [buildPreview]);
 
   // ─────────────────────────────────────────────────────────────────────────
+  const activeExecStage = useMemo(() => {
+    const active = [...feed].reverse().find(
+      (i): i is TaskCard => i.kind === "task" && (i.state === "thinking" || i.state === "running")
+    );
+    return (active?.executionStage ?? "idle") as "thinking" | "planning" | "building" | "debugging" | "finalizing" | "idle";
+  }, [feed]);
+
+  // ─────────────────────────────────────────────────────────────────────────
   // render
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -2609,7 +2576,7 @@ export default function WorkspacePage({ params }: { params: { id: string } }) {
               </div>
             ) : item.kind === "task" ? (
               <div key={item.id} className={needsGap ? "mt-2" : "mt-1"}>
-                <BuildStatusLine task={item} />
+                <BuildStatusLine task={item} files={files} />
               </div>
             ) : item.kind === "converse" ? (
               <div key={item.id} className="mt-1">
@@ -3514,6 +3481,7 @@ export default function WorkspacePage({ params }: { params: { id: string } }) {
             </div>
           </button>
         </div>
+
       </main>
 
       {/* HISTORY / CHECKPOINTS PANEL */}
