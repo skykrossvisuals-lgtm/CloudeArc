@@ -1,0 +1,362 @@
+PHASE: Conversational Intent Intelligence
+
+The system still fundamentally behaves like a code generator.
+
+Even with orchestration, adaptive cognition, and persistent intelligence, every user message is still treated as an execution request.
+
+This breaks the illusion of a real collaborative workspace.
+
+==================================================
+CORE PROBLEM
+============
+
+Messages like:
+
+* “hello”
+* “what do you think?”
+* “can we improve this?”
+* “this feels too crowded”
+* “maybe make it cleaner”
+* “I’m not sure about the layout”
+* “what would you do here?”
+
+should NOT trigger:
+
+* builds
+* execution plans
+* file generation
+* orchestration pipelines
+* prompt reruns
+
+Instead, the AI should:
+
+* converse naturally
+* brainstorm
+* critique
+* advise
+* reflect
+* ask strategic questions
+* discuss tradeoffs
+* suggest ideas
+* reason collaboratively
+
+The system currently lacks conversational intent separation.
+
+==================================================
+GOAL
+====
+
+Build a true multi-mode collaborative intelligence system.
+
+The AI must distinguish between:
+
+* conversation
+* brainstorming
+* advisory discussion
+* critique/review
+* clarification
+* planning
+* implementation
+* editing
+* debugging
+
+Execution should only happen when implementation intent is clear.
+
+==================================================
+NEW SYSTEMS TO BUILD
+====================
+
+1. IntentClassificationEngine
+2. ConversationMode
+3. AdvisoryMode
+4. BrainstormMode
+5. ReviewMode
+6. ExecutionGatekeeper
+7. PromptRerunProtection
+8. ContextualReplyEngine
+9. WorkspacePresenceLayer
+10. ConversationalMemoryLayer
+
+==================================================
+
+1. IntentClassificationEngine
+   ==================================================
+
+Before ANY orchestration begins:
+classify the message intent.
+
+Possible intents:
+
+* casual_conversation
+* brainstorming
+* critique
+* advisory
+* clarification
+* planning
+* implementation
+* editing
+* debugging
+* reflection
+
+This classification should happen BEFORE:
+
+* orchestrator start
+* prompt rewriting
+* execution planning
+* streamCodeGen
+* thought generation
+
+Implementation pipelines should ONLY activate for:
+
+* implementation
+* editing
+* debugging
+
+All other intents remain conversational.
+
+==================================================
+2. ConversationMode
+===================
+
+Natural workspace interaction layer.
+
+Examples:
+User:
+
+* “hello”
+
+AI:
+
+* “Hey. I’ve been thinking about the dashboard structure from earlier — the spacing rhythm is working well now.”
+
+User:
+
+* “what do you think we should add?”
+
+AI:
+
+* “The biggest opportunity right now is interaction depth. The structure is solid, but it still feels visually static.”
+
+NO BUILD SHOULD START.
+
+No orchestration.
+
+No file generation.
+
+Just intelligent collaboration.
+
+==================================================
+3. AdvisoryMode
+===============
+
+For strategic product/design/architecture advice.
+
+Examples:
+
+* “Should we use tabs here?”
+* “Would a sidebar work better?”
+* “Should this feel more cinematic?”
+
+The AI should:
+
+* analyze tradeoffs
+* recommend approaches
+* explain reasoning
+* remain conversational
+* avoid execution unless explicitly requested
+
+==================================================
+4. BrainstormMode
+=================
+
+For exploratory ideation.
+
+Examples:
+
+* “What else can we add?”
+* “Give me ideas”
+* “How can this feel more premium?”
+
+The AI should:
+
+* ideate naturally
+* build on prior context
+* generate concepts
+* maintain continuity
+* feel creative but grounded
+
+No implementation unless requested.
+
+==================================================
+5. ReviewMode
+=============
+
+For critique and feedback.
+
+Examples:
+
+* “This feels cluttered”
+* “The hero feels weak”
+* “Something is off”
+
+The AI should:
+
+* diagnose the issue
+* explain WHY
+* propose improvements
+* reference prior architecture
+* discuss visually/systemically
+
+Still no build unless requested.
+
+==================================================
+6. ExecutionGatekeeper
+======================
+
+A mandatory execution permission layer.
+
+Before ANY build:
+verify implementation intent confidence.
+
+Execution confidence should depend on:
+
+* explicit implementation verbs
+* actionable specificity
+* user confirmation
+* execution-oriented phrasing
+
+Examples that SHOULD trigger builds:
+
+* “implement this”
+* “build it”
+* “update the hero”
+* “add a pricing section”
+* “fix responsiveness”
+
+Examples that should NOT:
+
+* “what do you think?”
+* “maybe”
+* “could”
+* “should”
+* “I wonder”
+* “hello”
+
+If confidence is ambiguous:
+ask clarification questions.
+
+==================================================
+7. PromptRerunProtection
+========================
+
+CRITICAL.
+
+The system currently reruns previous prompts accidentally.
+
+This destroys realism.
+
+Requirements:
+
+* do not reuse prior build prompts automatically
+* do not trigger implementation from conversational followups
+* conversational replies must NEVER reactivate prior execution state
+* separate “active execution task” from “conversation context”
+
+The AI must understand:
+conversation continuation ≠ rerun request.
+
+==================================================
+8. ContextualReplyEngine
+========================
+
+Conversational responses should reference:
+
+* current project state
+* earlier decisions
+* visual language
+* architecture
+* unresolved opportunities
+
+WITHOUT triggering execution.
+
+The AI should feel aware and engaged.
+
+==================================================
+9. WorkspacePresenceLayer
+=========================
+
+The AI should feel present even when not building.
+
+Examples:
+
+* reflective observations
+* architectural opinions
+* noticing patterns
+* subtle strategic commentary
+* design awareness
+
+Like a real collaborator sitting in the workspace.
+
+NOT a dormant tool waiting for prompts.
+
+==================================================
+10. ConversationalMemoryLayer
+=============================
+
+Conversation should persist independently from execution.
+
+Remember:
+
+* ongoing discussions
+* critiques
+* preferences
+* unresolved debates
+* product direction conversations
+
+This should shape future replies naturally.
+
+==================================================
+RUNTIME CHANGES
+===============
+
+Before orchestrator.startTask():
+
+Run:
+IntentClassificationEngine.classify()
+
+Branch execution:
+
+IF implementation/edit/debug:
+→ execution pipeline
+
+ELSE:
+→ conversational pipeline
+
+Conversational pipeline should:
+
+* skip streamCodeGen
+* skip prompt rewriting
+* skip orchestration runtime
+* skip execution thought blocks
+* skip build stages
+
+Instead:
+
+* generate natural collaborative replies
+* maintain continuity
+* remain aware of project state
+* feel alive in the workspace
+
+==================================================
+IMPORTANT
+=========
+
+The AI must stop behaving like:
+“every input is a command.”
+
+It should behave like:
+“a persistent engineering collaborator.”
+
+This is the missing realism layer.
+
+Without this, the illusion always breaks.

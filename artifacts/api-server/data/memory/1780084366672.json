@@ -1,0 +1,18 @@
+{
+  "projectId": "1780084366672",
+  "lastUpdated": 1780084596398,
+  "buildCount": 1,
+  "templateType": "dashboard",
+  "styleMode": "modern-saas",
+  "designLanguage": {
+    "cornerStyle": "rounded",
+    "shadowDensity": "present",
+    "spacingPhilosophy": "compact",
+    "colorApproach": "balanced",
+    "typographyStyle": "humanist",
+    "animationPhilosophy": "micro"
+  },
+  "establishedPatterns": [
+    "rounded corner system"
+  ]
+}

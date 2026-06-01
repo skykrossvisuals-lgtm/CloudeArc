@@ -1,0 +1,333 @@
+We need to refactor the entire conversational architecture so the Workspace and Conversation systems share ONE unified conversational intelligence layer instead of behaving like two disconnected products.
+
+Right now:
+- Homepage Conversation mode behaves naturally and collaborates well
+- Workspace mode still behaves like an execution-only system
+- Workspace sometimes routes casual messages into build execution
+- Workspace assistant forgets conversational continuity
+- Build prompts can accidentally rerun
+- Casual prompts like "Hello" or "I have a brand name" trigger execution behavior instead of collaboration
+
+This must be fixed at the architecture level.
+
+GOAL:
+Create a Unified Conversational Intelligence System that powers BOTH:
+1. Homepage Conversation
+2. Workspace Collaboration
+
+The Workspace should feel like:
+- a real collaborator
+- aware of context
+- aware of project state
+- capable of discussing ideas naturally
+- capable of switching INTO execution only when execution intent is truly clear
+
+NOT:
+- an automated build trigger
+- a rigid assistant
+- a stateless execution bot
+
+========================================
+PHASE 1 — UNIFIED INTENT ARCHITECTURE
+========================================
+
+Create a shared conversational engine used by BOTH:
+- /conversation
+- /workspace
+
+This should replace the duplicated intent systems.
+
+Create:
+shared/lib/conversationEngine.ts
+
+This engine should contain:
+
+1. Intent classification
+2. Execution confidence scoring
+3. Conversation memory
+4. Collaboration mode handling
+5. Execution gating
+6. Build transition detection
+7. Rerun protection
+8. Conversational continuity
+
+The Workspace MUST consume this shared engine.
+
+NO separate workspace-specific intent logic anymore.
+
+========================================
+PHASE 2 — ADVANCED INTENT DETECTION
+========================================
+
+Expand intent classification into these modes:
+
+type Intent =
+  | "casual"
+  | "brainstorm"
+  | "advisory"
+  | "review"
+  | "reflection"
+  | "clarification"
+  | "planning"
+  | "execution"
+  | "modify"
+  | "debug"
+
+The engine should classify based on:
+- wording
+- sentence structure
+- imperative confidence
+- conversational continuity
+- project state
+- recent assistant/user history
+
+Examples:
+
+"Hello"
+→ casual
+
+"I have a brand name"
+→ brainstorming / clarification
+NOT execution
+
+"What do you think we can add?"
+→ advisory / brainstorm
+
+"This feels too empty"
+→ review
+
+"Can we improve the dashboard?"
+→ planning
+NOT execution immediately
+
+"Build the dashboard now"
+→ execution
+
+"Implement authentication"
+→ execution
+
+"Fix the navbar overflow"
+→ debug
+
+========================================
+PHASE 3 — EXECUTION GATEKEEPER
+========================================
+
+Execution should NEVER happen unless execution confidence passes threshold.
+
+Create:
+ExecutionGatekeeper
+
+Rules:
+- greetings NEVER execute
+- vague ideas NEVER execute
+- incomplete ideas NEVER execute
+- conceptual discussion NEVER execute
+- "I have an idea" NEVER executes
+- "should we..." NEVER executes
+- "what if..." NEVER executes
+
+Execution only happens when:
+- explicit build intent exists
+- actionable implementation direction exists
+- user clearly wants generation
+
+Before execution:
+assistant should naturally confirm understanding conversationally.
+
+Example:
+User:
+"I want a luxury real estate marketplace"
+
+Assistant:
+"That has strong potential. I’m imagining something high-trust and editorial rather than a generic listing platform. Do you want this optimized more for premium visuals, lead generation, or fast property discovery?"
+
+NO BUILD YET.
+
+Only AFTER user confirms:
+"Build it"
+
+THEN workspace execution begins.
+
+========================================
+PHASE 4 — WORKSPACE CONVERSATION MODE
+========================================
+
+Workspace should support full conversational collaboration BEFORE execution.
+
+The assistant inside workspace should:
+- discuss ideas
+- critique concepts
+- brainstorm features
+- review UX direction
+- suggest improvements
+- reflect on architecture
+- discuss product strategy
+
+WITHOUT triggering builds.
+
+The workspace assistant should feel:
+- alive
+- context-aware
+- collaborative
+- strategic
+- emotionally intelligent in pacing
+
+NOT robotic.
+
+========================================
+PHASE 5 — CONVERSATION MEMORY
+========================================
+
+Implement persistent conversational memory inside session.
+
+The assistant should remember:
+- current idea
+- previous suggestions
+- product direction
+- design taste
+- project goals
+- discussed tradeoffs
+
+Example:
+
+User:
+"I want the UI darker and more cinematic"
+
+Later:
+"What else can we improve?"
+
+Assistant:
+"The cinematic direction would become much stronger if we reduce flat surfaces and introduce layered lighting around the dashboard panels."
+
+This continuity must work in BOTH:
+- homepage conversation
+- workspace conversation
+
+========================================
+PHASE 6 — BUILD TRANSITION SYSTEM
+========================================
+
+When conversation naturally evolves into execution:
+the transition should feel organic.
+
+BAD:
+"Executing build..."
+
+GOOD:
+"Alright — the direction feels solid now. I’m going to start shaping the foundation around the cinematic dashboard system we discussed."
+
+Then workspace opens/build starts.
+
+========================================
+PHASE 7 — PREVENT PROMPT RERUNS
+========================================
+
+Fix rerun behavior completely.
+
+Problems:
+- previous execution prompts sometimes replay
+- build streams accidentally restart
+- stale prompts can re-trigger execution
+
+Implement:
+PromptExecutionRegistry
+
+Track:
+- active execution ids
+- completed prompt hashes
+- recent execution timestamps
+
+Prevent:
+- duplicate execution within cooldown
+- stale replay execution
+- accidental stream resurrection
+
+========================================
+PHASE 8 — WORKSPACE PRESENCE
+========================================
+
+The workspace assistant should feel like:
+- a long-term collaborator
+- aware of ongoing work
+- aware of previous architectural choices
+- aware of earlier discussions
+
+Examples:
+"The authentication flow we discussed earlier affects how onboarding should behave."
+
+"The luxury direction we established earlier means the typography should probably stay restrained and editorial."
+
+This should use:
+- architectural memory
+- design taste memory
+- retrospective awareness
+
+========================================
+PHASE 9 — REMOVE EXECUTION-FIRST FEELING
+========================================
+
+The Workspace should NEVER:
+- instantly jump into planning mode
+- instantly say "Let me think..."
+- instantly open build cadence
+- instantly trigger architecture narration
+
+unless execution intent is confirmed.
+
+Conversation mode should feel:
+- natural
+- relaxed
+- collaborative
+- strategic
+
+Execution mode should activate ONLY after intent confirmation.
+
+========================================
+PHASE 10 — SINGLE SOURCE OF TRUTH
+========================================
+
+Conversation logic must become centralized.
+
+Remove duplicated logic between:
+- workspace
+- homepage conversation
+- ask route
+- collaborate route
+
+Everything should route through:
+conversationEngine.ts
+
+This engine becomes the intelligence core.
+
+========================================
+IMPLEMENTATION REQUIREMENTS
+========================================
+
+Backend:
+- unify routes
+- centralize intent classification
+- add execution gatekeeper
+- add session conversational memory
+- add rerun prevention
+- unify collaborative prompting
+
+Frontend:
+- workspace uses same conversation engine
+- preserve conversational continuity visually
+- support conversation mode before execution
+- smooth transition into build mode
+- no abrupt architecture narration
+
+Behavior:
+- no robotic responses
+- no generic assistant replies
+- no accidental execution
+- no execution on greetings
+- no execution on vague concepts
+
+The final system should feel like:
+Cursor + Notion AI + a creative technical cofounder
+
+NOT:
+a prompt-to-build script runner.

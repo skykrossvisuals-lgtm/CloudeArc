@@ -1,0 +1,129 @@
+TASK: Add Relationship Phase Awareness System (NO REWRITE, EXTEND EXISTING ENGINE)
+
+We already have:
+
+conversationEngine.ts (confidence model, momentum, memory)
+personalityEngine.ts (tone + behavior system)
+workspace.tsx (execution + collaborate routing)
+
+We are now adding a Relationship Phase Awareness layer that changes how the AI behaves over time.
+
+This must be implemented as an EXTENSION only. Do not refactor existing systems.
+
+🧠 FEATURE: Relationship Phase Engine
+
+Create a new file:
+
+src/lib/relationshipPhaseEngine.ts
+
+It must:
+
+Track conversation evolution state
+Output one of these phases:
+discovering
+exploring
+converging
+deciding
+building
+refining
+shipping
+📊 INPUT SIGNALS
+
+The engine must use:
+
+direction score (0–10)
+scope score (0–10)
+commitment score (0–10)
+ambiguity score (0–10)
+message count
+🧠 PHASE RULES
+
+Implement deterministic logic:
+
+messageCount < 3 → discovering
+high ambiguity + low direction → exploring
+direction ≥ 6 + scope ≥ 5 → converging
+direction ≥ 7 + commitment ≥ 6 → deciding
+commitment ≥ 8 + scope ≥ 6 → building
+scope ≥ 7 + commitment ≥ 7 + low ambiguity → refining
+direction ≥ 8 + commitment ≥ 9 → shipping
+🔌 INTEGRATION REQUIREMENTS
+1. conversationEngine.ts
+Import relationshipPhaseEngine
+Update phase on every message using:
+confidenceModel output
+conversation memory size
+Add to context:
+phase: relationshipPhaseEngine.getPhase()
+2. personalityEngine.ts
+
+DO NOT rewrite file.
+
+Just extend system prompt generation:
+
+Add function:
+getPhaseGuidance(phase)
+
+It must return behavioral instructions:
+
+discovering → open, vague, low pressure
+exploring → idea expansion
+converging → narrowing ideas
+deciding → slightly assertive direction
+building → structured execution
+refining → taste / UX critique
+shipping → minimal changes, polish only
+3. ALL SYSTEM PROMPTS (IMPORTANT)
+
+In:
+
+converse.ts
+collaborate.ts
+ask.ts
+
+You must inject:
+
+# RELATIONSHIP PHASE
+{phaseGuidance}
+
+This must be appended to system prompt context.
+
+🧠 BEHAVIORAL GOAL
+
+This system must make the AI:
+
+start confused with user
+slowly align with intent
+converge into clarity
+transition into execution only when ready
+switch tone after build begins
+become “product-aware” over time
+🚫 CONSTRAINTS
+DO NOT break existing intent system
+DO NOT replace confidence model
+DO NOT remove momentum engine
+DO NOT modify execution gating logic
+ONLY ADD LAYER
+🎯 FINAL RESULT
+
+After implementation:
+
+The AI should feel like:
+
+“We’re figuring it out together…”
+
+→ then
+
+“Now I see it…”
+
+→ then
+
+“Let’s build this…”
+
+→ then
+
+“Let’s refine it…”
+
+→ then
+
+“Ship it.”

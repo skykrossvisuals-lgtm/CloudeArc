@@ -1,0 +1,157 @@
+TASK: Create Unified Decision Kernel (Single Brain Layer)
+
+We currently have multiple independent systems:
+
+conversationEngine.ts (intent + confidence + memory + momentum)
+personalityEngine.ts (tone + behavior rules)
+relationshipPhaseEngine.ts (phase system)
+ExecutionConfidenceModel (execution gating)
+
+These are working but fragmented.
+
+We now introduce a Unified Decision Kernel (UDK) that produces a single decision object used by ALL systems.
+
+🧩 STEP 1 — CREATE NEW FILE
+
+Create:
+
+src/lib/unifiedDecisionKernel.ts
+🧠 CORE PURPOSE
+
+The UDK must take:
+
+userMessage: string
+context: ConversationContext
+memory: WorkspaceRelationshipMemory
+confidence: ExecutionConfidence
+phase: RelationshipPhase
+momentum: MomentumState
+
+And output:
+
+Decision {
+  intent: "execution" | "planning" | "brainstorm" | "advisory" | "casual" | "modify" | "debug" | "reflection" | "clarification",
+  phase: RelationshipPhase,
+  confidenceScore: number,
+  executionAllowed: boolean,
+  responseMode: "short" | "medium" | "deep",
+  questionCount: 0 | 1,
+  tone: "cofounder" | "neutral" | "directive" | "exploratory",
+  memoryRelevance: number,
+  reasoningSignal: string
+}
+🧠 STEP 2 — DECISION LOGIC (IMPORTANT)
+
+The kernel must be deterministic and layered:
+
+1. Intent First
+
+Use existing conversationEngine classification.
+
+2. Phase Adjustment
+
+Use relationshipPhaseEngine.
+
+3. Confidence Check
+
+Use ExecutionConfidenceModel:
+
+if low → force planning (override execution)
+4. Memory Influence
+
+If memory shows:
+
+high ambiguity → exploratory tone
+high commitment → directive tone
+5. Momentum Influence
+exploring → encourage ideas
+converging → narrow focus
+building → execution clarity
+🚫 HARD RULES
+NEVER allow execution if:
+confidenceScore < threshold AND intent === "execution"
+NEVER output more than 1 question unless explicitly brainstorming
+NEVER mix phases (one decision = one phase)
+NEVER override modify/debug (always allow execution)
+🧠 STEP 3 — RESPONSE MODE RULES
+
+Map intent → responseMode:
+
+casual → short
+advisory → medium
+brainstorm → deep
+execution → medium or deep (based on confidence)
+reflection → medium
+debugging → structured
+🧠 STEP 4 — INTEGRATION INTO SYSTEM
+Update conversationEngine.ts
+
+Replace scattered decision logic with:
+
+const decision = unifiedDecisionKernel.process({
+  userMessage,
+  context: buildContext(),
+  memory: conversationMemory,
+  confidence: confidenceModel.evaluate(),
+  phase: relationshipPhaseEngine.getPhase(),
+  momentum: momentumEngine.getState()
+});
+Update workspace.tsx
+
+Replace:
+
+classifyIntent()
+partial confidence checks
+ad-hoc routing logic
+
+WITH:
+
+const decision = unifiedDecisionKernel.process(...)
+
+Then route using:
+
+decision.intent
+decision.executionAllowed
+decision.responseMode
+Update ALL routes:
+collaborate.ts
+ask.ts
+converse.ts
+
+Each must use:
+
+decision.tone
+decision.responseMode
+decision.phase
+🧠 STEP 5 — SYSTEM BEHAVIOR GOAL
+
+After implementation:
+
+The system should behave like ONE brain:
+
+Instead of:
+intent engine deciding
+phase engine influencing
+confidence model gating
+personality engine styling
+Now:
+
+ONE kernel decides everything → everything else only executes behavior
+
+🔥 FINAL OUTCOME
+
+After this:
+
+CloudeArc becomes:
+
+a unified cognitive system that thinks in one pass
+
+not:
+
+5 systems arguing with each other
+
+⚠️ IMPORTANT
+
+Do NOT delete existing systems.
+
+This is a coordination layer only, not a replacement.

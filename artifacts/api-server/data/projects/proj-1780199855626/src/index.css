@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #0a0a0f;
+  color: #e2e8f0;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: #c4ff00;
+  color: #0a0a0f;
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent;
+  }
+  .text-gradient-green {
+    @apply bg-gradient-to-r from-[#c4ff00] via-[#a3d900] to-[#7fb800] bg-clip-text text-transparent;
+  }
+}

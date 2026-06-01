@@ -1,0 +1,18 @@
+{
+  "projectId": "1780122274276",
+  "lastUpdated": 1780123243773,
+  "buildCount": 2,
+  "templateType": "ecommerce",
+  "styleMode": "modern-saas",
+  "designLanguage": {
+    "cornerStyle": "rounded",
+    "shadowDensity": "present",
+    "spacingPhilosophy": "compact",
+    "colorApproach": "balanced",
+    "typographyStyle": "humanist",
+    "animationPhilosophy": "micro"
+  },
+  "establishedPatterns": [
+    "rounded corner system"
+  ]
+}
