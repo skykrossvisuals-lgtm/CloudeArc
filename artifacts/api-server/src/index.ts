@@ -1,9 +1,15 @@
+// Load environment variables from .env.local before anything else
+import { config } from "dotenv";
+import { resolve } from "path";
+config({ path: resolve(__dirname, "../../../.env.local") });
+
 import { createServer } from "http";
 import app from "./app";
 import { logger } from "./lib/logger";
 import { setupCollab } from "./collab";
 
-const rawPort = process.env["PORT"];
+// Prefer API_PORT for the API server; fallback to PORT; default to 3000 if none set
+const rawPort = process.env["API_PORT"] ?? process.env["PORT"] ?? "3000";
 
 if (!rawPort) {
   throw new Error(

@@ -4,7 +4,9 @@ import { buildConverseSystemPrompt, type RelationshipPhase } from "../lib/person
 const router = Router();
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const MODEL = process.env.MODEL_GENERAL ?? "openai/gpt-oss-120b";
+const NVIDIA_API_URL = process.env.NVIDIA_API_URL ?? "https://integrate.api.nvidia.com/v1/chat/completions";
+const API_PROVIDER = process.env.API_PROVIDER ?? "openrouter";
+const MODEL = process.env.MODEL_AGENT ?? "anthropic/claude-3.5-sonnet";
 
 function sseSetup(res: Response) {
   res.setHeader("Content-Type", "text/event-stream");
@@ -34,9 +36,12 @@ router.post("/", async (req: Request, res: Response) => {
 
   sseSetup(res);
 
-  const apiKey = process.env.OPENROUTER_API_KEY?.trim();
+  const apiKey = API_PROVIDER === "nvidia"
+    ? process.env.NVIDIA_API_KEY?.trim()
+    : process.env.OPENROUTER_API_KEY?.trim();
   if (!apiKey) {
-    sseSend(res, "error", { message: "OPENROUTER_API_KEY not configured" });
+    const keyName = API_PROVIDER === "nvidia" ? "NVIDIA_API_KEY" : "OPENROUTER_API_KEY";
+    sseSend(res, "error", { message: `${keyName} not configured` });
     res.end();
     return;
   }
@@ -53,8 +58,10 @@ router.post("/", async (req: Request, res: Response) => {
     stream: true,
   };
 
+  const apiUrl = API_PROVIDER === "nvidia" ? NVIDIA_API_URL : OPENROUTER_URL;
+
   try {
-    const upstream = await fetch(OPENROUTER_URL, {
+    const upstream = await fetch(apiUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

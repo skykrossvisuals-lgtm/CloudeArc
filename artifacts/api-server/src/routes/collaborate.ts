@@ -4,7 +4,9 @@ import { buildSystemPrompt, type PersonalityIntent, type PersonalityContext, typ
 const router = Router();
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const FAST_MODEL = process.env.MODEL_FAST ?? "openai/gpt-oss-120b";
+const NVIDIA_API_URL = process.env.NVIDIA_API_URL ?? "https://integrate.api.nvidia.com/v1/chat/completions";
+const API_PROVIDER = process.env.API_PROVIDER ?? "openrouter";
+const FAST_MODEL = process.env.MODEL_FAST ?? "anthropic/claude-3.5-sonnet";
 const TIMEOUT_MS = 55_000;
 
 type CollaborateIntent =
@@ -78,8 +80,14 @@ class ThinkStripper {
 }
 
 router.post("/", async (req: Request, res: Response) => {
-  const apiKey = process.env.OPENROUTER_API_KEY?.trim();
-  if (!apiKey) { res.status(500).json({ error: "OPENROUTER_API_KEY not configured" }); return; }
+  const apiKey = API_PROVIDER === "nvidia"
+    ? process.env.NVIDIA_API_KEY?.trim()
+    : process.env.OPENROUTER_API_KEY?.trim();
+  if (!apiKey) { 
+    const keyName = API_PROVIDER === "nvidia" ? "NVIDIA_API_KEY" : "OPENROUTER_API_KEY";
+    res.status(500).json({ error: `${keyName} not configured` }); 
+    return; 
+  }
 
   const { message, intent, fileList, styleProfile, conversationContext, history, phase, tone, responseMode } = req.body as {
     message: string;
@@ -120,7 +128,8 @@ router.post("/", async (req: Request, res: Response) => {
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
-    const upstream = await fetch(OPENROUTER_URL, {
+    const apiUrl = API_PROVIDER === "nvidia" ? NVIDIA_API_URL : OPENROUTER_URL;
+    const upstream = await fetch(apiUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({

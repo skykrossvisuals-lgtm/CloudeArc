@@ -1,5 +1,5 @@
 import { applyPatch } from "./patchEngine";
-import { writeFile } from "./sandbox";
+import { deleteFile, writeFile } from "./sandbox";
 
 export class SyncEngine {
   constructor(private setFiles: (f: any) => void) {}
@@ -20,6 +20,8 @@ export class SyncEngine {
         delete copy[action.path];
         return copy;
       });
+
+      await deleteFile(action.path);
     }
 
     if (action.type === "patch") {

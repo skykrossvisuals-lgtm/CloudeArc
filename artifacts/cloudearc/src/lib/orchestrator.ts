@@ -1,7 +1,6 @@
 // ── ExecutionEventBus + AIOrchestrator + Adaptive Autonomy ────────────────────
 // Central runtime for all AI activity.
 
-import { useCallback } from "react";
 import type { ExecutionStage } from "../components/AgentLivenessIndicator";
 
 // ── Event types ───────────────────────────────────────────────────────────────
@@ -13,13 +12,8 @@ export type OrchestratorEventType =
   | "narrative_generated"
   | "file_opened"
   | "file_edited"
-  | "file_written"
-  | "file_modified"
-  | "file_deleted"
   | "operation_started"
   | "operation_completed"
-  | "operation_failed"
-  | "recovery_attempt"
   | "stage_changed"
   | "validation_started"
   | "build_completed"
@@ -30,17 +24,7 @@ export type OrchestratorEventType =
   | "self_correction"
   | "silent_window_start"
   | "silent_window_end"
-  | "compression_active"
-  | "narration"
-  | "step_started"
-  | "step_completed"
-  | "step_error"
-  | "metrics"
-  | "complexity_detected"
-  | "user_message"
-  | "build_requested"
-  | "build_cancelled"
-  | "feedback_received";
+  | "compression_active";
 
 export interface ThoughtBlockData {
   title: string;
@@ -186,38 +170,6 @@ class AIOrchestrator {
   fileEdited(path: string) {
     this.patch({ sessionFileCount: this.state.sessionFileCount + 1 });
     this.bus.emit("file_edited", { path });
-  }
-
-  fileWritten(path: string, content: string) {
-    const isNew = !this.state.sessionFileCount;
-    this.patch({ sessionFileCount: this.state.sessionFileCount + 1 });
-    this.bus.emit(isNew ? "file_written" : "file_modified", { path, content, size: content.length });
-    this.bus.emit("file_edited", { path });
-  }
-
-  fileDeleted(path: string) {
-    this.bus.emit("file_deleted", { path });
-  }
-
-  emitNarration(text: string, confidence = 0.9) {
-    this.bus.emit("narration", { text, confidence });
-  }
-
-  trackStep(stepNumber: number, totalSteps: number, description: string) {
-    this.bus.emit("step_started", { stepNumber, totalSteps, description });
-  }
-
-  private lastComplexityScore = 0;
-
-  recordComplexity(score: number, reason: string) {
-    if (score > this.lastComplexityScore + 0.2) {
-      this.bus.emit("drift_detected", {
-        previousComplexity: this.lastComplexityScore,
-        newComplexity: score,
-      });
-    }
-    this.lastComplexityScore = score;
-    this.bus.emit("complexity_detected", { score, reason });
   }
 
   finishTask(summary: string) {
@@ -642,24 +594,3 @@ export const bandwidth    = new CognitiveBandwidthManager();
 export const dedup        = new NarrativeDeduplicationEngine();
 export const tasteTracker = new DesignTasteTrackerFE();
 export { ExecutionEventBus };
-
-// ── useOrchestrator hook ──────────────────────────────────────────────────────
-// Returns the singleton orchestrator and its event bus so components can
-// subscribe to events without importing the singleton directly.
-
-export function useOrchestrator() {
-  const on = useCallback(
-    (type: OrchestratorEventType, handler: (event: OrchestratorEvent) => void) =>
-      orchestrator.bus.on(type, handler),
-    [],
-  );
-
-  return {
-    orchestrator,
-    events: {
-      on,
-      onAny: (handler: (event: OrchestratorEvent) => void) => orchestrator.bus.onAny(handler),
-    },
-    state: orchestrator.getState(),
-  };
-}
